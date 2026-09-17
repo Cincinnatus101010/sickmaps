@@ -1,5 +1,5 @@
 {
-  "name": "sickmaps",
+  "name": "@iantroisi/sickmaps",
   "version": "0.1.0",
   "description": "Minecraft and GTA-style MapLibre map themes for web apps",
   "type": "module",
@@ -25,6 +25,9 @@
     "build": "tsc",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "repository": {
     "type": "git",

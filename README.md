@@ -5,7 +5,7 @@ MapLibre themes that mimic **Minecraft** world maps and **GTA** in-game minimaps
 ## Install
 
 ```bash
-npm install sickmaps maplibre-gl
+npm install @iantroisi/sickmaps maplibre-gl
 ```
 
 From GitHub (builds on install):
@@ -27,8 +27,8 @@ npm install github:Cincinnatus101010/sickmaps
 ```ts
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { createGameMap } from "sickmaps";
-import "sickmaps/css";
+import { createGameMap } from "@iantroisi/sickmaps";
+import "@iantroisi/sickmaps/css";
 
 const map = await createGameMap(maplibregl, {
   theme: "minecraft",
@@ -48,8 +48,8 @@ import {
   getMinecraftPixelRatio,
   installMinecraftEnhancements,
   decorateMapContainer,
-} from "sickmaps";
-import "sickmaps/css";
+} from "@iantroisi/sickmaps";
+import "@iantroisi/sickmaps/css";
 
 decorateMapContainer("map", "minecraft");
 const style = await loadGameMapStyle("minecraft");
