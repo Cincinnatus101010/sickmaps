@@ -1,0 +1,73 @@
+/** Approximate in-game block colors (default biome). */
+export const MC = {
+  grass: "#79c05a",
+  forest: "#357628",
+  leaves: "#48b518",
+  dirt: "#866526",
+  farmland: "#9a8548",
+  sand: "#dbcb92",
+  stone: "#7d7d7d",
+  water: "#3f76e4",
+  waterDeep: "#2d5bb8",
+  ice: "#d0e8f8",
+  snow: "#f0fafa",
+  swamp: "#556b2f",
+  planks: "#9f824c",
+  cobble: "#7a7a7a",
+  bedrock: "#141414",
+  building: "#9aa0a6",
+} as const;
+
+import type { ExpressionSpecification } from "maplibre-gl";
+
+/** MapLibre expression: landcover `class` → block color. */
+export const LANDCOVER_CLASS_COLOR: ExpressionSpecification = [
+  "match",
+  ["get", "class"],
+  "grass",
+  MC.grass,
+  "farmland",
+  MC.farmland,
+  "wood",
+  MC.forest,
+  "rock",
+  MC.stone,
+  "sand",
+  MC.sand,
+  "wetland",
+  MC.swamp,
+  "ice",
+  MC.ice,
+  "glacier",
+  MC.snow,
+  "flooded",
+  MC.swamp,
+  MC.grass,
+];
+
+/** MapLibre expression: landuse `class` → block color. */
+export const LANDUSE_CLASS_COLOR: ExpressionSpecification = [
+  "match",
+  ["get", "class"],
+  "park",
+  MC.grass,
+  "grass",
+  MC.grass,
+  "meadow",
+  MC.grass,
+  "forest",
+  MC.forest,
+  "residential",
+  MC.dirt,
+  "commercial",
+  MC.cobble,
+  "industrial",
+  MC.stone,
+  "retail",
+  MC.planks,
+  "school",
+  MC.planks,
+  "hospital",
+  MC.planks,
+  MC.dirt,
+];

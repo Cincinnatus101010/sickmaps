@@ -1,0 +1,69 @@
+/* Root: add via decorateMapContainer() or class sickmaps sickmaps--<theme> */
+
+.sickmaps {
+  position: relative;
+  overflow: hidden;
+}
+
+.sickmaps .maplibregl-canvas {
+  outline: none;
+}
+
+/* Minecraft: chunky pixels, subtle grid vignette */
+.sickmaps--minecraft .maplibregl-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: contrast(1.06) saturate(1.08);
+}
+
+.sickmaps--minecraft::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.45);
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 15px,
+    rgba(0, 0, 0, 0.03) 15px,
+    rgba(0, 0, 0, 0.03) 16px
+  ),
+  repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 15px,
+    rgba(0, 0, 0, 0.03) 15px,
+    rgba(0, 0, 0, 0.03) 16px
+  );
+}
+
+/* GTA San Andreas: flat minimap, desaturated parchment */
+.sickmaps--gta-sa .maplibregl-canvas {
+  filter: contrast(1.08) saturate(0.62) sepia(0.22) brightness(0.95);
+}
+
+.sickmaps--gta-sa::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(20, 18, 14, 0.85);
+  box-shadow: inset 0 0 48px rgba(0, 0, 0, 0.55);
+  border-radius: 2px;
+}
+
+/* GTA V: cleaner HUD minimap */
+.sickmaps--gta-v .maplibregl-canvas {
+  filter: contrast(1.05) saturate(0.78) brightness(0.98);
+}
+
+.sickmaps--gta-v::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 32px rgba(0, 0, 0, 0.35);
+  border-radius: 4px;
+}

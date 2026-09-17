@@ -1,0 +1,56 @@
+{
+  "name": "sickmaps",
+  "version": "0.1.0",
+  "description": "Minecraft and GTA-style MapLibre map themes for web apps",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./css": "./css/sickmaps.css"
+  },
+  "files": [
+    "dist",
+    "css",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "css/*.css"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cincinnatus101010/sickmaps.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Cincinnatus101010/sickmaps/issues"
+  },
+  "homepage": "https://github.com/Cincinnatus101010/sickmaps#readme",
+  "keywords": [
+    "maplibre",
+    "maplibre-gl",
+    "map",
+    "minecraft",
+    "gta",
+    "minimap",
+    "game-map",
+    "openfreemap"
+  ],
+  "peerDependencies": {
+    "maplibre-gl": ">=3.0.0"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.16",
+    "maplibre-gl": "^4.7.1",
+    "typescript": "^5.9.2"
+  },
+  "license": "MIT"
+}
