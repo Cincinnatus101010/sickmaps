@@ -1,40 +1,73 @@
 name: Publish npm
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: npm-publish-sickmaps
+  group: npm-publish
   cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push'
+      )
     permissions:
       contents: read
       id-token: write
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
+      - name: Resolve checkout ref
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.sha }}
+
+      - name: Require NPM_TOKEN
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "::error title=Missing NPM_TOKEN::Run TroisiUI workflow \"Copy NPM_TOKEN to steddy and sickmaps\" or copy the secret manually."
+            exit 1
+          fi
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$HOME/.npmrc"
+          npm whoami
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+          cache: npm
 
-      - name: Verify npm auth
+      - run: npm ci
+      - run: npm run build
+
+      - name: Bump patch when this version is already on npm
+        if: github.event_name != 'release'
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::Add repository secret NPM_TOKEN (same granular token as TroisiUI)."
-            exit 1
+          LOCAL=$(node -p "require('./package.json').version")
+          if npm view "@iantroisi/sickmaps@${LOCAL}" version >/dev/null 2>&1; then
+            echo "v${LOCAL} is already on npm; bumping patch"
+            npm version patch --no-git-tag-version
           fi
-          npm whoami
-
-      - name: Install and build
-        run: npm ci
 
       - name: Publish to npm
         run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -77,6 +77,13 @@ Zoom in (≈14+) to see the 16-block chunk grid.
 | `decorateMapContainer(el, theme)` | HUD CSS classes on container |
 | `PALETTES`, `THEME_DEFAULTS` | Theme tuning |
 
+## Publishing (same flow as [steddy](https://github.com/Cincinnatus101010/steddy))
+
+1. On **TroisiUI**, run **Actions → Copy NPM_TOKEN to steddy and sickmaps** (needs `NPM_TOKEN` + `CROSS_REPO_GITHUB_TOKEN` repo secrets).
+2. Push to **sickmaps** `main` — **CI** runs, then **Publish npm** publishes `@iantroisi/sickmaps` with provenance.
+
+Manual publish: **Actions → Publish npm → Run workflow** on this repo.
+
 ## Demo
 
 Live preview app: [sickmapsdemo](https://github.com/Cincinnatus101010/sickmapsdemo)
