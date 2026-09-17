@@ -15,6 +15,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,11 +25,9 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      - name: Require NPM_TOKEN
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify npm auth
         run: |
-          if [ -z "$NPM_TOKEN" ]; then
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
             echo "::error::Add repository secret NPM_TOKEN (same granular token as TroisiUI)."
             exit 1
           fi
@@ -38,5 +38,3 @@ jobs:
 
       - name: Publish to npm
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
