@@ -6,6 +6,11 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      skip_path_check:
+        description: Publish even if this commit did not touch src/, package.json, or README.md
+        type: boolean
+        default: false
 
 concurrency:
   group: npm-publish
@@ -22,7 +27,7 @@ jobs:
         github.event.workflow_run.event == 'push'
       )
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - name: Resolve checkout ref
@@ -30,36 +35,87 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
             echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${{ github.event.workflow_run.head_branch }}" >> "$GITHUB_OUTPUT"
           else
             echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ steps.ref.outputs.sha }}
+          ref: ${{ steps.ref.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Check out the exact commit
+        run: git reset --hard "${{ steps.ref.outputs.sha }}"
+
+      - name: Skip version-bump-only commits
+        id: skip
+        run: |
+          if git log -1 --pretty=%B | grep -Fq '[skip publish]'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping publish for chore release commit."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect library file changes
+        if: steps.skip.outputs.skip != 'true'
+        id: changes
+        run: |
+          PARENT="$(git rev-parse HEAD^)"
+          if git diff --name-only "$PARENT" HEAD | grep -Eq '^src/|^package\.json$|^README\.md$'; then
+            echo "library=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "library=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Decide whether to publish
+        id: gate
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.skip_path_check }}" = "true" ]; then
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+            elif [ "${{ steps.changes.outputs.library }}" = "true" ]; then
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+            fi
+            exit 0
+          fi
+          if [ "${{ steps.changes.outputs.library }}" = "true" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "No library changes in this commit; skipping npm publish."
+          fi
 
       - name: Require NPM_TOKEN
+        if: steps.skip.outputs.skip != 'true' && steps.gate.outputs.publish == 'true'
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ -z "$NPM_TOKEN" ]; then
-            echo "::error title=Missing NPM_TOKEN::Run TroisiUI workflow \"Copy NPM_TOKEN to steddy and sickmaps\" or copy the secret manually."
+            echo "::error title=Missing NPM_TOKEN::Run TroisiUI → Copy NPM_TOKEN to steddy and sickmaps."
             exit 1
           fi
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$HOME/.npmrc"
           npm whoami
 
       - uses: actions/setup-node@v4
+        if: steps.skip.outputs.skip != 'true' && steps.gate.outputs.publish == 'true'
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
 
-      - run: npm ci
-      - run: npm run build
+      - name: Install and build
+        if: steps.skip.outputs.skip != 'true' && steps.gate.outputs.publish == 'true'
+        run: npm ci
 
       - name: Bump patch when this version is already on npm
-        if: github.event_name != 'release'
+        if: steps.skip.outputs.skip != 'true' && steps.gate.outputs.publish == 'true'
         run: |
           LOCAL=$(node -p "require('./package.json').version")
           if npm view "@iantroisi/sickmaps@${LOCAL}" version >/dev/null 2>&1; then
@@ -68,6 +124,21 @@ jobs:
           fi
 
       - name: Publish to npm
+        if: steps.skip.outputs.skip != 'true' && steps.gate.outputs.publish == 'true'
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit version bump
+        if: steps.skip.outputs.skip != 'true' && steps.gate.outputs.publish == 'true'
+        run: |
+          if git diff --quiet package.json package-lock.json; then
+            echo "No version change to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          VERSION=$(node -p "require('./package.json').version")
+          git add package.json package-lock.json
+          git commit -m "chore: release v${VERSION} [skip publish]"
+          git push origin "HEAD:${{ steps.ref.outputs.branch }}"
